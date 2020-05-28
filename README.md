@@ -23,10 +23,10 @@ from axial_attention import AxialAttention
 img = torch.randn(1, 3, 256, 256)
 
 attn = AxialAttention(
-	dim = 3, 			 # embedding dimension
-	dim_index = 1,       # where is the embedding dimension
-	heads = 1,			 # number of heads for multi-head attention
-	num_dimensions = 2,  # number of axial dimensions (images is 2, video is 3, or more)
+    dim = 3,             # embedding dimension
+    dim_index = 1,       # where is the embedding dimension
+    heads = 1,           # number of heads for multi-head attention
+    num_dimensions = 2,  # number of axial dimensions (images is 2, video is 3, or more)
 )
 
 attn(img)
@@ -41,10 +41,10 @@ from axial_attention import AxialAttention
 img = torch.randn(1, 20, 20, 512)
 
 attn = AxialAttention(
-	dim = 512, 			 # embedding dimension
-	dim_index = -1,      # where is the embedding dimension
-	heads = 8,			 # number of heads for multi-head attention
-	num_dimensions = 2,  # number of axial dimensions (images is 2, video is 3, or more)
+    dim = 512,           # embedding dimension
+    dim_index = -1,      # where is the embedding dimension
+    heads = 8,           # number of heads for multi-head attention
+    num_dimensions = 2,  # number of axial dimensions (images is 2, video is 3, or more)
 )
 
 attn(img)
@@ -59,10 +59,10 @@ from axial_attention import AxialAttention
 video = torch.randn(1, 5, 128, 256, 256)
 
 attn = AxialAttention(
-	dim = 128, 			 # embedding dimension
-	dim_index = 2,       # where is the embedding dimension
-	heads = 8,			 # number of heads for multi-head attention
-	num_dimensions = 3,  # number of axial dimensions (images is 2, video is 3, or more)
+    dim = 128,           # embedding dimension
+    dim_index = 2,       # where is the embedding dimension
+    heads = 8,           # number of heads for multi-head attention
+    num_dimensions = 3,  # number of axial dimensions (images is 2, video is 3, or more)
 )
 
 attn(video)
