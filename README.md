@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/axial-attention.svg)](https://badge.fury.io/py/axial-attention)
 
-Implementation of Axial attention for Pytorch. A simple but powerful technique to attend to multi-dimensional data efficiently.
+Implementation of <a href="https://arxiv.org/abs/1912.12180">Axial attention</a> in Pytorch. A simple but powerful technique to attend to multi-dimensional data efficiently. It has worked wonders for me and many other researchers.
 
 Simply add some positional encoding to your data and pass it into this handy class, specifying which dimension is considered the embedding, and how many axial dimensions to rotate through. All the permutating, reshaping, will be taken care of for you.
 
