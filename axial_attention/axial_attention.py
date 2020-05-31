@@ -33,11 +33,14 @@ def calculate_permutations(num_dimensions, emb_dim):
 # classic multi-head attention
 
 class SelfAttention(nn.Module):
-    def __init__(self, dim, heads):
+    def __init__(self, dim, heads, dim_heads = None):
         super().__init__()
+        self.dim_heads = (dim // heads) if dim_heads is None else dim_heads
+        dim_hidden = self.dim_heads * heads
+
         self.heads = heads
-        self.to_qkv = nn.Linear(dim, 3 * dim, bias = False)
-        self.to_out = nn.Linear(dim, dim, bias = False)
+        self.to_qkv = nn.Linear(dim, 3 * dim_hidden, bias = False)
+        self.to_out = nn.Linear(dim_hidden, dim, bias = False)
 
     def forward(self, x):
         b, t, d, h = *x.shape, self.heads
@@ -53,13 +56,13 @@ class SelfAttention(nn.Module):
 # axial attention class
 
 class AxialAttention(nn.Module):
-    def __init__(self, dim, num_dimensions = 2, heads = 8, dim_index = -1):
+    def __init__(self, dim, num_dimensions = 2, heads = 8, dim_heads = None, dim_index = -1):
         assert (dim % heads) == 0, 'hidden dimension must be divisible by number of heads'
         super().__init__()
         self.dim = dim
         self.total_dimensions = num_dimensions + 2
         self.dim_index = dim_index if dim_index > 0 else (dim_index + self.total_dimensions)
-        self.axial_attentions = nn.ModuleList([SelfAttention(dim, heads) for _ in range(num_dimensions)])
+        self.axial_attentions = nn.ModuleList([SelfAttention(dim, heads, dim_heads) for _ in range(num_dimensions)])
         self.permutations = calculate_permutations(num_dimensions, dim_index)
 
     def forward(self, x):
