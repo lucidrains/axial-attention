@@ -128,10 +128,16 @@ class ImageTransformer(nn.Module):
         super().__init__()
         permutations = calculate_permutations(2, dim_index)
 
+        get_ff = lambda: nn.Sequential(
+            nn.Conv2d(dim, dim * 4, 3, padding=1),
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(dim * 4, dim, 3, padding=1),
+        )
+
         layers = nn.ModuleList([])
         for _ in range(depth):
             attn_functions = nn.ModuleList([PermuteToFrom(permutation, Rezero(SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
-            conv_functions = nn.ModuleList([Rezero(nn.Conv2d(dim, dim, 3, padding=1)), Rezero(nn.Conv2d(dim, dim, 3, padding=1))])
+            conv_functions = nn.ModuleList([get_ff(), get_ff()])
             layers.append(attn_functions)
             layers.append(conv_functions)            
 
