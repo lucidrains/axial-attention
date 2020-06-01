@@ -23,12 +23,38 @@ def calculate_permutations(num_dimensions, emb_dim):
 
     for axial_dim in axial_dims:
         last_two_dims = [axial_dim, emb_dim]
-        dims_rest = set(range(0, num_dimensions + 2)) - set(last_two_dims)
+        dims_rest = set(range(0, total_dimensions)) - set(last_two_dims)
         permutation = [*dims_rest, *last_two_dims]
-        _, inv_permutation = sort_and_return_indices(permutation)
-        permutations.append((permutation, inv_permutation))
+        permutations.append(permutation)
       
     return permutations
+
+# helper classes
+
+class PermuteToFrom(nn.Module):
+    def __init__(self, permutation, fn):
+        super().__init__()
+        self.fn = fn
+        _, inv_permutation = sort_and_return_indices(permutation)
+        self.permutation = permutation
+        self.inv_permutation = inv_permutation
+
+    def forward(self, x, **kwargs):
+        axial = x.permute(*self.permutation)
+
+        shape = axial.shape
+        *_, t, d = shape
+
+        # merge all but axial dimension
+        axial = axial.reshape(-1, t, d)
+
+        # attention
+        axial = self.fn(axial, **kwargs)
+
+        # restore to original shape and permutation
+        axial = axial.reshape(*shape)
+        axial = axial.permute(*self.inv_permutation)
+        return axial
 
 # classic multi-head attention
 
@@ -63,32 +89,16 @@ class AxialAttention(nn.Module):
         self.dim = dim
         self.total_dimensions = num_dimensions + 2
         self.dim_index = dim_index if dim_index > 0 else (dim_index + self.total_dimensions)
-        self.axial_attentions = nn.ModuleList([SelfAttention(dim, heads, dim_heads) for _ in range(num_dimensions)])
-        self.permutations = calculate_permutations(num_dimensions, dim_index)
+
+        attentions = []
+        for permutation in calculate_permutations(num_dimensions, dim_index):
+            attentions.append(PermuteToFrom(permutation, SelfAttention(dim, heads, dim_heads)))
+
+        self.axial_attentions = nn.ModuleList(attentions)
 
     def forward(self, x):
         assert len(x.shape) == self.total_dimensions, 'input tensor does not have the correct number of dimensions'
         assert x.shape[self.dim_index] == self.dim, 'input tensor does not have the correct input dimension'
 
-        out = []
-
-        for axial_attn, (permutation, inv_permutation) in zip(self.axial_attentions, self.permutations):
-            # permute to bring embedding dimension to last, axial dimension to second to last
-            axial = x.permute(*permutation)
-
-            shape = axial.shape
-            *_, t, d = shape
-
-            # merge all but axial dimension
-            axial = axial.reshape(-1, t, d)
-
-            # attention
-            axial = axial_attn(axial)
-
-            # restore to original shape and permutation
-            axial = axial.reshape(*shape)
-            axial = axial.permute(*inv_permutation)
-
-            out.append(axial)
-
+        out = [axial_attn(x) for axial_attn in self.axial_attentions]
         return sum(out)
