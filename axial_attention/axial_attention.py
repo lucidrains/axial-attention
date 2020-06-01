@@ -130,8 +130,11 @@ class ImageTransformer(nn.Module):
 
         layers = nn.ModuleList([])
         for _ in range(depth):
-            functions = nn.ModuleList([PermuteToFrom(permutation, Rezero(SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
-            layers.append(functions)
+            attn_functions = nn.ModuleList([PermuteToFrom(permutation, Rezero(SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
+            conv_functions = nn.ModuleList([nn.Conv2d(dim, dim, 3, padding=1), nn.Conv2d(dim, dim, 3, padding=1)])
+            layers.append(attn_functions)
+            layers.append(conv_functions)            
+
         execute_type = ReversibleSequence if reversible else Sequential
         self.layers = execute_type(layers)
 
