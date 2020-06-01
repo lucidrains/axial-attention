@@ -69,6 +69,25 @@ attn = AxialAttention(
 attn(video)
 ```
 
+Image Transformer, with reversible network
+
+```python
+import torch
+from torch import nn
+from axial_attention import ImageTransformer
+
+conv1d = nn.Conv1D(3, 128)
+
+transformer = ImageTransformer(
+    dim = 128,
+    depth = 12,
+    reversible = True
+)
+
+img = torch.randn(1, 3, 512, 512)
+
+transformer(conv1d(img))
+```
 ## Citation
 
 ```bibtex

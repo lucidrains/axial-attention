@@ -1,1 +1,1 @@
-from axial_attention.axial_attention import AxialAttention
+from axial_attention.axial_attention import AxialAttention, ImageTransformer

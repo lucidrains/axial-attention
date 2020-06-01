@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from operator import itemgetter
+from axial_attention.reversible import ReversibleSequence
 
 def map_el_ind(arr, ind):
     return list(map(itemgetter(ind), arr))
@@ -30,6 +31,15 @@ def calculate_permutations(num_dimensions, emb_dim):
     return permutations
 
 # helper classes
+
+class Sequential(nn.Module):
+    def __init__(self, blocks):
+        super().__init__()
+        self.blocks = blocks
+    def forward(self, x):
+        for f, g in self.blocks:
+            x = x + f(x) + g(x)
+        return x
 
 class PermuteToFrom(nn.Module):
     def __init__(self, permutation, fn):
@@ -102,3 +112,20 @@ class AxialAttention(nn.Module):
 
         out = [axial_attn(x) for axial_attn in self.axial_attentions]
         return sum(out)
+
+# image transformer - with reversibility
+
+class ImageTransformer(nn.Module):
+    def __init__(self, dim, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True):
+        super().__init__()
+        permutations = calculate_permutations(2, dim_index)
+
+        layers = nn.ModuleList([])
+        for _ in range(depth):
+            functions = nn.ModuleList([PermuteToFrom(permutation, SelfAttention(dim, heads, dim_heads)) for permutation in permutations])
+            layers.append(functions)
+        execute_type = ReversibleSequence if reversible else Sequential
+        self.layers = execute_type(layers)
+
+    def forward(self, x):
+        return self.layers(x)
