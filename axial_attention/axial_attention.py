@@ -48,6 +48,7 @@ class SelfAttention(nn.Module):
         merge_heads = lambda x: x.reshape(b, t, h, -1).transpose(1, 2).reshape(b * h, t, -1)
         q, k, v = map(merge_heads, (q, k, v))
         dots = torch.einsum('bie,bje->bij', q, k) * (d ** -0.5)
+        dots = dots.softmax(dim=-1)
         out = torch.einsum('bij,bje->bie', dots, v)
         out = out.reshape(b, h, t, -1).transpose(1, 2).reshape(b, t, -1)
         out = self.to_out(out)
