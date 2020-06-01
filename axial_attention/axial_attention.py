@@ -32,6 +32,14 @@ def calculate_permutations(num_dimensions, emb_dim):
 
 # helper classes
 
+class Rezero(nn.Module):
+    def __init__(self, fn):
+        super().__init__()
+        self.fn = fn
+        self.g = nn.Parameter(torch.tensor(0.))
+    def forward(self, x):
+        return self.fn(x) * self.g
+
 class Sequential(nn.Module):
     def __init__(self, blocks):
         super().__init__()
@@ -122,7 +130,7 @@ class ImageTransformer(nn.Module):
 
         layers = nn.ModuleList([])
         for _ in range(depth):
-            functions = nn.ModuleList([PermuteToFrom(permutation, SelfAttention(dim, heads, dim_heads)) for permutation in permutations])
+            functions = nn.ModuleList([PermuteToFrom(permutation, Rezero(SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
             layers.append(functions)
         execute_type = ReversibleSequence if reversible else Sequential
         self.layers = execute_type(layers)
