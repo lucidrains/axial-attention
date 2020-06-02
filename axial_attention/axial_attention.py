@@ -137,7 +137,7 @@ class ImageTransformer(nn.Module):
         layers = nn.ModuleList([])
         for _ in range(depth):
             attn_functions = nn.ModuleList([PermuteToFrom(permutation, Rezero(SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
-            conv_functions = nn.ModuleList([get_ff(), get_ff()])
+            conv_functions = nn.ModuleList([Rezero(get_ff()), Rezero(get_ff())])
             layers.append(attn_functions)
             layers.append(conv_functions)            
 
