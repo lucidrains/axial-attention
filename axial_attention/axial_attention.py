@@ -123,7 +123,17 @@ class SelfAttention(nn.Module):
     def forward(self, x, kv = None):
         kv = x if kv is None else kv
         q, k, v = (self.to_q(x), *self.to_kv(kv).chunk(2, dim=-1))
-        out = attention(q, k, v, self.heads)    
+
+        b, t, d, h, e = *q.shape, self.heads, self.dim_heads
+
+        merge_heads = lambda x: x.reshape(b, -1, h, e).transpose(1, 2).reshape(b * h, -1, e)
+        q, k, v = map(merge_heads, (q, k, v))
+
+        dots = torch.einsum('bie,bje->bij', q, k) * ((d // h) ** -0.5)
+        dots = dots.softmax(dim=-1)
+        out = torch.einsum('bij,bje->bie', dots, v)
+
+        out = out.reshape(b, h, -1, e).transpose(1, 2).reshape(b, -1, d)
         out = self.to_out(out)
         return out
 
@@ -137,8 +147,8 @@ class InducedSetAttention(nn.Module):
     def forward(self, x):
         b = x.shape[0]
         q = self.queries.expand(b, -1, -1)
-        out = self.attn_in(q, x)
-        out = self.attn_out(x, out)
+        q_out = self.attn_in(q, x)
+        out = self.attn_out(x, q_out)
         return out
 
 # axial attention class
