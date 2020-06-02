@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
   name = 'axial_attention',
-  packages = find_packages(exclude=['examples']),
-  version = '0.2.2',
+  packages = find_packages(),
+  version = '0.3.0',
   license='MIT',
   description = 'Axial Attention',
   author = 'Phil Wang',

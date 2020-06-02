@@ -74,6 +74,27 @@ class PermuteToFrom(nn.Module):
         axial = axial.permute(*self.inv_permutation)
         return axial
 
+class AxialPositionalEmbedding(nn.Module):
+    def __init__(self, emb_dim, emb_dim_index, dimensions):
+        super().__init__()
+        parameters = []
+        total_dimensions = len(dimensions) + 2
+        ax_dim_indexes = [i for i in range(1, total_dimensions) if i != emb_dim_index]
+
+        for axial_dim, axial_dim_index in zip(dimensions, ax_dim_indexes):
+            shape = [1] * total_dimensions
+            shape[emb_dim_index] = emb_dim
+            shape[axial_dim_index] = axial_dim
+            parameter = nn.Parameter(torch.randn(*shape))
+            parameters.append(parameter)
+
+        self.params = nn.ParameterList(parameters)
+
+    def forward(self, x):
+        for param in self.params:
+            x = x + param
+        return x
+
 # classic multi-head attention
 
 def attention(q, k, v, h):
