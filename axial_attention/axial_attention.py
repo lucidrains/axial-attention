@@ -129,9 +129,10 @@ class ImageTransformer(nn.Module):
         permutations = calculate_permutations(2, dim_index)
 
         get_ff = lambda: nn.Sequential(
-            nn.Conv2d(dim, dim * 4, 3, padding=1),
-            nn.LeakyReLU(inplace=True),
-            nn.Conv2d(dim * 4, dim, 3, padding=1),
+            nn.Conv2d(dim, dim, 3, padding=1),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(dim, dim, 3, padding=1),
+            nn.LeakyReLU(0.2, inplace=True)
         )
 
         layers = nn.ModuleList([])
