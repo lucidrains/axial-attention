@@ -74,11 +74,11 @@ Image Transformer, with reversible network
 ```python
 import torch
 from torch import nn
-from axial_attention import ImageTransformer
+from axial_attention import AxialImageTransformer
 
-conv1d = nn.Conv1D(3, 128)
+conv1x1 = nn.Conv2d(3, 128, 1)
 
-transformer = ImageTransformer(
+transformer = AxialImageTransformer(
     dim = 128,
     depth = 12,
     reversible = True
@@ -86,7 +86,7 @@ transformer = ImageTransformer(
 
 img = torch.randn(1, 3, 512, 512)
 
-transformer(conv1d(img))
+transformer(conv1x1(img))
 ```
 ## Citation
 

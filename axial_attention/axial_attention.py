@@ -123,16 +123,15 @@ class AxialAttention(nn.Module):
 
 # image transformer - with reversibility
 
-class ImageTransformer(nn.Module):
+class AxialImageTransformer(nn.Module):
     def __init__(self, dim, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True):
         super().__init__()
         permutations = calculate_permutations(2, dim_index)
 
         get_ff = lambda: nn.Sequential(
             nn.Conv2d(dim, dim, 3, padding=1),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(dim, dim, 3, padding=1),
-            nn.LeakyReLU(0.2, inplace=True)
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(dim, dim, 3, padding=1)
         )
 
         layers = nn.ModuleList([])
