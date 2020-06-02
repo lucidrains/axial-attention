@@ -98,3 +98,12 @@ transformer(conv1x1(img))
     archivePrefix = {arXiv}
 }
 ```
+
+```bibtex
+@misc{lee2018set,
+    title = {Set Transformer: A Framework for Attention-based Permutation-Invariant Neural Networks},
+    author = {Juho Lee and Yoonho Lee and Jungtaek Kim and Adam R. Kosiorek and Seungjin Choi and Yee Whye Teh},
+    year = {2018},
+    archivePrefix = {arXiv}
+}
+```

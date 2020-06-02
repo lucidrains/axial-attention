@@ -76,6 +76,18 @@ class PermuteToFrom(nn.Module):
 
 # classic multi-head attention
 
+def attention(q, k, v, h):
+    b, t, d = q.shape
+    e = d // h
+
+    merge_heads = lambda x: x.reshape(b, -1, h, e).transpose(1, 2).reshape(b * h, -1, e)
+    q, k, v = map(merge_heads, (q, k, v))
+    dots = torch.einsum('bie,bje->bij', q, k) * ((d // h) ** -0.5)
+    dots = dots.softmax(dim=-1)
+    out = torch.einsum('bij,bje->bie', dots, v)
+    out = out.reshape(b, h, -1, e).transpose(1, 2).reshape(b, -1, d)
+    return out
+
 class SelfAttention(nn.Module):
     def __init__(self, dim, heads, dim_heads = None):
         super().__init__()
@@ -83,19 +95,29 @@ class SelfAttention(nn.Module):
         dim_hidden = self.dim_heads * heads
 
         self.heads = heads
-        self.to_qkv = nn.Linear(dim, 3 * dim_hidden, bias = False)
-        self.to_out = nn.Linear(dim_hidden, dim, bias = False)
+        self.to_q = nn.Linear(dim, dim_hidden, bias = False)
+        self.to_kv = nn.Linear(dim, 2 * dim_hidden, bias = False)
+        self.to_out = nn.Linear(dim_hidden, dim)
+
+    def forward(self, x, kv = None):
+        kv = x if kv is None else kv
+        q, k, v = (self.to_q(x), *self.to_kv(kv).chunk(2, dim=-1))
+        out = attention(q, k, v, self.heads)    
+        out = self.to_out(out)
+        return out
+
+class InducedSetAttention(nn.Module):
+    def __init__(self, num_queries, dim, heads, dim_heads = None):
+        super().__init__()
+        self.queries = nn.Parameter(torch.randn(1, num_queries, dim))
+        self.attn_in = SelfAttention(dim, heads)
+        self.attn_out = SelfAttention(dim, heads)
 
     def forward(self, x):
-        b, t, d, h = *x.shape, self.heads
-        q, k, v = self.to_qkv(x).chunk(3, dim=-1)
-        merge_heads = lambda x: x.reshape(b, t, h, -1).transpose(1, 2).reshape(b * h, t, -1)
-        q, k, v = map(merge_heads, (q, k, v))
-        dots = torch.einsum('bie,bje->bij', q, k) * (d ** -0.5)
-        dots = dots.softmax(dim=-1)
-        out = torch.einsum('bij,bje->bie', dots, v)
-        out = out.reshape(b, h, t, -1).transpose(1, 2).reshape(b, t, -1)
-        out = self.to_out(out)
+        b = x.shape[0]
+        q = self.queries.expand(b, -1, -1)
+        out = self.attn_in(q, x)
+        out = self.attn_out(x, out)
         return out
 
 # axial attention class
