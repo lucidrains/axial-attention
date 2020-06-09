@@ -198,4 +198,6 @@ class AxialImageTransformer(nn.Module):
         self.layers = execute_type(layers)
 
     def forward(self, x):
-        return self.layers(x)
+        x = torch.cat((x, x), dim=-1)
+        x = self.layers(x)
+        return torch.stack(x.chunk(2, dim=-1)).mean(dim=0)
