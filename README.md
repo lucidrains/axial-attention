@@ -107,3 +107,14 @@ transformer(conv1x1(img))
     archivePrefix = {arXiv}
 }
 ```
+
+```bibtex
+@misc{wang2020axialdeeplab,
+    title={Axial-DeepLab: Stand-Alone Axial-Attention for Panoptic Segmentation},
+    author={Huiyu Wang and Yukun Zhu and Bradley Green and Hartwig Adam and Alan Yuille and Liang-Chieh Chen},
+    year={2020},
+    eprint={2003.07853},
+    archivePrefix={arXiv},
+    primaryClass={cs.CV}
+}
+```
