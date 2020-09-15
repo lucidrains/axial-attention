@@ -154,7 +154,7 @@ class InducedSetAttention(nn.Module):
 # axial attention class
 
 class AxialAttention(nn.Module):
-    def __init__(self, dim, num_dimensions = 2, heads = 8, dim_heads = None, dim_index = -1):
+    def __init__(self, dim, num_dimensions = 2, heads = 8, dim_heads = None, dim_index = -1, sum_axial_out = True):
         assert (dim % heads) == 0, 'hidden dimension must be divisible by number of heads'
         super().__init__()
         self.dim = dim
@@ -166,13 +166,20 @@ class AxialAttention(nn.Module):
             attentions.append(PermuteToFrom(permutation, SelfAttention(dim, heads, dim_heads)))
 
         self.axial_attentions = nn.ModuleList(attentions)
+        self.sum_axial_out = sum_axial_out
 
     def forward(self, x):
         assert len(x.shape) == self.total_dimensions, 'input tensor does not have the correct number of dimensions'
         assert x.shape[self.dim_index] == self.dim, 'input tensor does not have the correct input dimension'
 
-        out = [axial_attn(x) for axial_attn in self.axial_attentions]
-        return sum(out)
+        if self.sum_axial_out:
+            return sum(map(lambda axial_attn: axial_attn(x), self.axial_attentions))
+
+        axial_attn = self.axial_attentions[0]
+        out = axial_attn(x)
+        for axial_attn in self.axial_attentions[1:]:
+            out = axial_attn(out)
+        return out
 
 # image transformer - with reversibility
 
