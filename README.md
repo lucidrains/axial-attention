@@ -6,6 +6,8 @@ Implementation of <a href="https://arxiv.org/abs/1912.12180">Axial attention</a>
 
 Simply add some positional encoding to your data and pass it into this handy class, specifying which dimension is considered the embedding, and how many axial dimensions to rotate through. All the permutating, reshaping, will be taken care of for you.
 
+This paper was actually rejected on the basis of being too simple. And yet, it has since been used successfully in a number of applications, among those <a href="https://ai.googleblog.com/2020/03/a-neural-weather-model-for-eight-hour.html">weather prediction</a>, <a href="https://ai.googleblog.com/2020/08/axial-deeplab-long-range-modeling-in.html"> all-attention image segmentation</a>. Just goes to show.
+
 ### Install
 
 ```bash
