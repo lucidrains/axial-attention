@@ -33,7 +33,7 @@ attn = AxialAttention(
     sum_axial_out = True   # whether to sum the contributions of attention on each axis, or to run the input through them sequentially. defaults to true
 )
 
-attn(img)
+attn(img) # (1, 3, 256, 256)
 ```
 
 Channel-last image latents
@@ -51,7 +51,7 @@ attn = AxialAttention(
     num_dimensions = 2,  # number of axial dimensions (images is 2, video is 3, or more)
 )
 
-attn(img)
+attn(img) # (1, 20, 20 ,512)
 ```
 
 Video
@@ -69,7 +69,7 @@ attn = AxialAttention(
     num_dimensions = 3,  # number of axial dimensions (images is 2, video is 3, or more)
 )
 
-attn(video)
+attn(video) # (1, 5, 128, 256, 256)
 ```
 
 Image Transformer, with reversible network
@@ -89,7 +89,7 @@ transformer = AxialImageTransformer(
 
 img = torch.randn(1, 3, 512, 512)
 
-transformer(conv1x1(img))
+transformer(conv1x1(img)) # (1, 3, 512, 512)
 ```
 ## Citation
 
