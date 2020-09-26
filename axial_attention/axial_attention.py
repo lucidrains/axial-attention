@@ -58,7 +58,7 @@ class PermuteToFrom(nn.Module):
         self.inv_permutation = inv_permutation
 
     def forward(self, x, **kwargs):
-        axial = x.permute(*self.permutation)
+        axial = x.permute(*self.permutation).contiguous()
 
         shape = axial.shape
         *_, t, d = shape
@@ -71,7 +71,7 @@ class PermuteToFrom(nn.Module):
 
         # restore to original shape and permutation
         axial = axial.reshape(*shape)
-        axial = axial.permute(*self.inv_permutation)
+        axial = axial.permute(*self.inv_permutation).contiguous()
         return axial
 
 class AxialPositionalEmbedding(nn.Module):
