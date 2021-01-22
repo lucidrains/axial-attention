@@ -3,6 +3,9 @@ from torch import nn
 from operator import itemgetter
 from axial_attention.reversible import ReversibleSequence
 
+def exists(val):
+    return val is not None
+
 def map_el_ind(arr, ind):
     return list(map(itemgetter(ind), arr))
 
@@ -37,6 +40,7 @@ class Rezero(nn.Module):
         super().__init__()
         self.fn = fn
         self.g = nn.Parameter(torch.tensor(0.))
+
     def forward(self, x):
         return self.fn(x) * self.g
 
@@ -44,6 +48,7 @@ class Sequential(nn.Module):
     def __init__(self, blocks):
         super().__init__()
         self.blocks = blocks
+
     def forward(self, x):
         for f, g in self.blocks:
             x = x + f(x) + g(x)
@@ -75,15 +80,15 @@ class PermuteToFrom(nn.Module):
         return axial
 
 class AxialPositionalEmbedding(nn.Module):
-    def __init__(self, emb_dim, emb_dim_index, dimensions):
+    def __init__(self, dim, shape, emb_dim_index = 1):
         super().__init__()
         parameters = []
-        total_dimensions = len(dimensions) + 2
+        total_dimensions = len(shape) + 2
         ax_dim_indexes = [i for i in range(1, total_dimensions) if i != emb_dim_index]
 
-        for axial_dim, axial_dim_index in zip(dimensions, ax_dim_indexes):
+        for axial_dim, axial_dim_index in zip(shape, ax_dim_indexes):
             shape = [1] * total_dimensions
-            shape[emb_dim_index] = emb_dim
+            shape[emb_dim_index] = dim
             shape[axial_dim_index] = axial_dim
             parameter = nn.Parameter(torch.randn(*shape))
             parameters.append(parameter)
@@ -103,7 +108,7 @@ def attention(q, k, v, h):
 
     merge_heads = lambda x: x.reshape(b, -1, h, e).transpose(1, 2).reshape(b * h, -1, e)
     q, k, v = map(merge_heads, (q, k, v))
-    dots = torch.einsum('bie,bje->bij', q, k) * ((d // h) ** -0.5)
+    dots = torch.einsum('bie,bje->bij', q, k) * (e ** -0.5)
     dots = dots.softmax(dim=-1)
     out = torch.einsum('bij,bje->bie', dots, v)
     out = out.reshape(b, h, -1, e).transpose(1, 2).reshape(b, -1, d)
@@ -137,20 +142,6 @@ class SelfAttention(nn.Module):
         out = self.to_out(out)
         return out
 
-class InducedSetAttention(nn.Module):
-    def __init__(self, num_queries, dim, heads, dim_heads = None):
-        super().__init__()
-        self.queries = nn.Parameter(torch.randn(1, num_queries, dim))
-        self.attn_in = SelfAttention(dim, heads)
-        self.attn_out = SelfAttention(dim, heads)
-
-    def forward(self, x):
-        b = x.shape[0]
-        q = self.queries.expand(b, -1, -1)
-        q_out = self.attn_in(q, x)
-        out = self.attn_out(x, q_out)
-        return out
-
 # axial attention class
 
 class AxialAttention(nn.Module):
@@ -175,16 +166,15 @@ class AxialAttention(nn.Module):
         if self.sum_axial_out:
             return sum(map(lambda axial_attn: axial_attn(x), self.axial_attentions))
 
-        axial_attn = self.axial_attentions[0]
-        out = axial_attn(x)
-        for axial_attn in self.axial_attentions[1:]:
+        out = x
+        for axial_attn in self.axial_attentions:
             out = axial_attn(out)
         return out
 
 # image transformer - with reversibility
 
 class AxialImageTransformer(nn.Module):
-    def __init__(self, dim, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True):
+    def __init__(self, dim, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True, axial_pos_emb_shape = None):
         super().__init__()
         permutations = calculate_permutations(2, dim_index)
 
@@ -193,6 +183,8 @@ class AxialImageTransformer(nn.Module):
             nn.LeakyReLU(inplace=True),
             nn.Conv2d(dim, dim, 3, padding=1)
         )
+
+        self.pos_emb = AxialPositionalEmbedding(dim, axial_pos_emb_shape, dim_index) if exists(axial_pos_emb_shape) else nn.Identity()
 
         layers = nn.ModuleList([])
         for _ in range(depth):
@@ -205,6 +197,7 @@ class AxialImageTransformer(nn.Module):
         self.layers = execute_type(layers)
 
     def forward(self, x):
+        x = self.pos_emb(x)
         x = torch.cat((x, x), dim=-1)
         x = self.layers(x)
         return torch.stack(x.chunk(2, dim=-1)).mean(dim=0)

@@ -91,6 +91,30 @@ img = torch.randn(1, 3, 512, 512)
 
 transformer(conv1x1(img)) # (1, 3, 512, 512)
 ```
+
+With axial positional embedding
+
+```python
+import torch
+from axial_attention import AxialAttention, AxialPositionalEmbedding
+
+img = torch.randn(1, 512, 20, 20)
+
+attn = AxialAttention(
+    dim = 512,
+    heads = 8,
+    dim_index = 1
+)
+
+pos_emb = AxialPositionalEmbedding(
+    dim = 512,
+    shape = (20, 20)
+)
+
+img = pos_emb(img)  # (1, 512, 20, 20)  - now positionally embedded
+img = attn(img)     # (1, 512, 20, 20)
+```
+
 ## Citation
 
 ```bibtex
