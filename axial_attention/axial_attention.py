@@ -3,6 +3,8 @@ from torch import nn
 from operator import itemgetter
 from axial_attention.reversible import ReversibleSequence
 
+# helper functions
+
 def exists(val):
     return val is not None
 
@@ -79,6 +81,8 @@ class PermuteToFrom(nn.Module):
         axial = axial.permute(*self.inv_permutation).contiguous()
         return axial
 
+# axial pos emb
+
 class AxialPositionalEmbedding(nn.Module):
     def __init__(self, dim, shape, emb_dim_index = 1):
         super().__init__()
@@ -100,19 +104,7 @@ class AxialPositionalEmbedding(nn.Module):
             x = x + param
         return x
 
-# classic multi-head attention
-
-def attention(q, k, v, h):
-    b, t, d = q.shape
-    e = d // h
-
-    merge_heads = lambda x: x.reshape(b, -1, h, e).transpose(1, 2).reshape(b * h, -1, e)
-    q, k, v = map(merge_heads, (q, k, v))
-    dots = torch.einsum('bie,bje->bij', q, k) * (e ** -0.5)
-    dots = dots.softmax(dim=-1)
-    out = torch.einsum('bij,bje->bie', dots, v)
-    out = out.reshape(b, h, -1, e).transpose(1, 2).reshape(b, -1, d)
-    return out
+# attention
 
 class SelfAttention(nn.Module):
     def __init__(self, dim, heads, dim_heads = None):
@@ -134,7 +126,7 @@ class SelfAttention(nn.Module):
         merge_heads = lambda x: x.reshape(b, -1, h, e).transpose(1, 2).reshape(b * h, -1, e)
         q, k, v = map(merge_heads, (q, k, v))
 
-        dots = torch.einsum('bie,bje->bij', q, k) * ((d // h) ** -0.5)
+        dots = torch.einsum('bie,bje->bij', q, k) * (e ** -0.5)
         dots = dots.softmax(dim=-1)
         out = torch.einsum('bij,bje->bie', dots, v)
 
@@ -171,7 +163,7 @@ class AxialAttention(nn.Module):
             out = axial_attn(out)
         return out
 
-# image transformer - with reversibility
+# axial image transformer
 
 class AxialImageTransformer(nn.Module):
     def __init__(self, dim, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True, axial_pos_emb_shape = None):
