@@ -119,29 +119,20 @@ img = attn(img)     # (1, 512, 20, 20)
 
 ```bibtex
 @misc{ho2019axial,
-    title = {Axial Attention in Multidimensional Transformers},
+    title  = {Axial Attention in Multidimensional Transformers},
     author = {Jonathan Ho and Nal Kalchbrenner and Dirk Weissenborn and Tim Salimans},
-    year = {2019},
-    archivePrefix = {arXiv}
-}
-```
-
-```bibtex
-@misc{lee2018set,
-    title = {Set Transformer: A Framework for Attention-based Permutation-Invariant Neural Networks},
-    author = {Juho Lee and Yoonho Lee and Jungtaek Kim and Adam R. Kosiorek and Seungjin Choi and Yee Whye Teh},
-    year = {2018},
+    year   = {2019},
     archivePrefix = {arXiv}
 }
 ```
 
 ```bibtex
 @misc{wang2020axialdeeplab,
-    title={Axial-DeepLab: Stand-Alone Axial-Attention for Panoptic Segmentation},
-    author={Huiyu Wang and Yukun Zhu and Bradley Green and Hartwig Adam and Alan Yuille and Liang-Chieh Chen},
-    year={2020},
-    eprint={2003.07853},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
+    title   = {Axial-DeepLab: Stand-Alone Axial-Attention for Panoptic Segmentation},
+    author  = {Huiyu Wang and Yukun Zhu and Bradley Green and Hartwig Adam and Alan Yuille and Liang-Chieh Chen},
+    year    = {2020},
+    eprint  = {2003.07853},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.CV}
 }
 ```
