@@ -136,3 +136,13 @@ img = attn(img)     # (1, 512, 20, 20)
     primaryClass = {cs.CV}
 }
 ```
+
+```bibtx
+@inproceedings{huang2019ccnet,
+    title   = {Ccnet: Criss-cross attention for semantic segmentation},
+    author  = {Huang, Zilong and Wang, Xinggang and Huang, Lichao and Huang, Chang and Wei, Yunchao and Liu, Wenyu},
+    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision},
+    pages   = {603--612},
+    year    = {2019}
+}
+```
