@@ -137,7 +137,7 @@ img = attn(img)     # (1, 512, 20, 20)
 }
 ```
 
-```bibtx
+```bibtex
 @inproceedings{huang2019ccnet,
     title   = {Ccnet: Criss-cross attention for semantic segmentation},
     author  = {Huang, Zilong and Wang, Xinggang and Huang, Lichao and Huang, Chang and Wei, Yunchao and Liu, Wenyu},
