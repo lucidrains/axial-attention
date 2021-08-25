@@ -37,14 +37,27 @@ def calculate_permutations(num_dimensions, emb_dim):
 
 # helper classes
 
-class Rezero(nn.Module):
-    def __init__(self, fn):
+class ChanLayerNorm(nn.Module):
+    def __init__(self, dim, eps = 1e-5):
         super().__init__()
-        self.fn = fn
-        self.g = nn.Parameter(torch.tensor(0.))
+        self.eps = eps
+        self.g = nn.Parameter(torch.ones(1, dim, 1, 1))
+        self.b = nn.Parameter(torch.zeros(1, dim, 1, 1))
 
     def forward(self, x):
-        return self.fn(x) * self.g
+        std = torch.var(x, dim = 1, unbiased = False, keepdim = True).sqrt()
+        mean = torch.mean(x, dim = 1, keepdim = True)
+        return (x - mean) / (std + self.eps) * self.g + self.b
+
+class PreNorm(nn.Module):
+    def __init__(self, dim, fn):
+        super().__init__()
+        self.fn = fn
+        self.norm = nn.LayerNorm(dim)
+
+    def forward(self, x):
+        x = self.norm(x)
+        return self.fn(x)
 
 class Sequential(nn.Module):
     def __init__(self, blocks):
@@ -53,7 +66,8 @@ class Sequential(nn.Module):
 
     def forward(self, x):
         for f, g in self.blocks:
-            x = x + f(x) + g(x)
+            x = x + f(x)
+            x = x + g(x)
         return x
 
 class PermuteToFrom(nn.Module):
@@ -171,17 +185,18 @@ class AxialImageTransformer(nn.Module):
         permutations = calculate_permutations(2, dim_index)
 
         get_ff = lambda: nn.Sequential(
-            nn.Conv2d(dim, dim, 3, padding=1),
+            ChanLayerNorm(dim),
+            nn.Conv2d(dim, dim * 4, 3, padding = 1),
             nn.LeakyReLU(inplace=True),
-            nn.Conv2d(dim, dim, 3, padding=1)
+            nn.Conv2d(dim * 4, dim, 3, padding = 1)
         )
 
         self.pos_emb = AxialPositionalEmbedding(dim, axial_pos_emb_shape, dim_index) if exists(axial_pos_emb_shape) else nn.Identity()
 
         layers = nn.ModuleList([])
         for _ in range(depth):
-            attn_functions = nn.ModuleList([PermuteToFrom(permutation, Rezero(SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
-            conv_functions = nn.ModuleList([Rezero(get_ff()), Rezero(get_ff())])
+            attn_functions = nn.ModuleList([PermuteToFrom(permutation, PreNorm(dim, SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
+            conv_functions = nn.ModuleList([get_ff(), get_ff()])
             layers.append(attn_functions)
             layers.append(conv_functions)            
 
@@ -190,6 +205,4 @@ class AxialImageTransformer(nn.Module):
 
     def forward(self, x):
         x = self.pos_emb(x)
-        x = torch.cat((x, x), dim=-1)
-        x = self.layers(x)
-        return torch.stack(x.chunk(2, dim=-1)).mean(dim=0)
+        return self.layers(x)

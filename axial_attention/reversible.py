@@ -45,20 +45,20 @@ class ReversibleBlock(nn.Module):
         self.g = Deterministic(g)
 
     def forward(self, x, f_args = {}, g_args = {}):
-        x1, x2 = torch.chunk(x, 2, dim=2)
+        x1, x2 = torch.chunk(x, 2, dim = 1)
         y1, y2 = None, None
 
         with torch.no_grad():
             y1 = x1 + self.f(x2, record_rng=self.training, **f_args)
             y2 = x2 + self.g(y1, record_rng=self.training, **g_args)
 
-        return torch.cat([y1, y2], dim=2)
+        return torch.cat([y1, y2], dim = 1)
 
     def backward_pass(self, y, dy, f_args = {}, g_args = {}):
-        y1, y2 = torch.chunk(y, 2, dim=2)
+        y1, y2 = torch.chunk(y, 2, dim = 1)
         del y
 
-        dy1, dy2 = torch.chunk(dy, 2, dim=2)
+        dy1, dy2 = torch.chunk(dy, 2, dim = 1)
         del dy
 
         with torch.enable_grad():
@@ -87,8 +87,8 @@ class ReversibleBlock(nn.Module):
             del dy2
             x2.grad = None
 
-            x = torch.cat([x1, x2.detach()], dim=2)
-            dx = torch.cat([dx1, dx2], dim=2)
+            x = torch.cat([x1, x2.detach()], dim = 1)
+            dx = torch.cat([dx1, dx2], dim = 1)
 
         return x, dx
 
@@ -99,10 +99,10 @@ class IrreversibleBlock(nn.Module):
         self.g = g
 
     def forward(self, x, f_args, g_args):
-        x1, x2 = torch.chunk(x, 2, dim=2)
+        x1, x2 = torch.chunk(x, 2, dim = 1)
         y1 = x1 + self.f(x2, **f_args)
         y2 = x2 + self.g(y1, **g_args)
-        return torch.cat([y1, y2], dim=2)
+        return torch.cat([y1, y2], dim = 1)
 
 class _ReversibleFunction(Function):
     @staticmethod
@@ -130,4 +130,6 @@ class ReversibleSequence(nn.Module):
     def forward(self, x, arg_route = (True, True), **kwargs):
         f_args, g_args = map(lambda route: kwargs if route else {}, arg_route)
         block_kwargs = {'f_args': f_args, 'g_args': g_args}
-        return _ReversibleFunction.apply(x, self.blocks, block_kwargs)
+        x = torch.cat((x, x), dim = 1)
+        x = _ReversibleFunction.apply(x, self.blocks, block_kwargs)
+        return torch.stack(x.chunk(2, dim = 1)).mean(dim = 0)
