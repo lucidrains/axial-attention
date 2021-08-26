@@ -104,18 +104,18 @@ class AxialPositionalEmbedding(nn.Module):
         total_dimensions = len(shape) + 2
         ax_dim_indexes = [i for i in range(1, total_dimensions) if i != emb_dim_index]
 
-        for axial_dim, axial_dim_index in zip(shape, ax_dim_indexes):
+        self.num_axials = len(shape)
+
+        for i, (axial_dim, axial_dim_index) in enumerate(zip(shape, ax_dim_indexes)):
             shape = [1] * total_dimensions
             shape[emb_dim_index] = dim
             shape[axial_dim_index] = axial_dim
             parameter = nn.Parameter(torch.randn(*shape))
-            parameters.append(parameter)
-
-        self.params = nn.ParameterList(parameters)
+            setattr(self, f'param_{i}', parameter)
 
     def forward(self, x):
-        for param in self.params:
-            x = x + param
+        for i in range(self.num_axials):
+            x = x + getattr(self, f'param_{i}')
         return x
 
 # attention
